@@ -1,6 +1,6 @@
 # XZCode
 
-XZCode 是一款 Windows 桌面端 ZCode 多账号管理工具，基于 Electron 开发，主要用于集中管理、注册、切换和维护多个 ZCode 账号。
+XZCode 是一款 Windows 桌面端 ZCode 多账号管理工具，基于 Electron 开发，主要用于集中管理、自动注册、切换和维护多个 ZCode 账号。
 
 ## 主要功能
 
