@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+<title>XZCode</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="ambient ambient--a"></div>
+  <div class="ambient ambient--b"></div>
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand__logo">Z</div>
+      <div>
+        <div class="brand__name">XZCode</div>
+        <div class="brand__sub">Account Manager</div>
+      </div>
+    </div>
+
+    <div class="side-card current-card">
+      <div class="side-label">当前账号</div>
+      <div id="current-user" class="current-user">读取中…</div>
+      <div id="current-status" class="current-status">--</div>
+      <div id="current-cred" class="current-cred hidden">
+        <div class="current-cred__row">
+          <span class="current-cred__k">邮箱</span>
+          <span id="current-email" class="current-cred__v" title="点击复制">--</span>
+        </div>
+        <div class="current-cred__row">
+          <span class="current-cred__k">密码</span>
+          <span id="current-password" class="current-cred__v current-cred__v--mono" title="点击复制">--</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-card plan-card">
+      <div class="quota__head">
+        <div class="side-label">套餐与额度</div>
+        <button id="btn-claim" class="btn btn--ghost btn--mini">一键领取</button>
+        <button id="btn-quota-refresh" class="btn btn--ghost btn--mini">刷新</button>
+      </div>
+      <div id="quota-updated" class="quota__updated">读取中…</div>
+      <div id="quota-grid" class="quota__grid"></div>
+    </div>
+
+    <div class="side-foot">
+      <button id="btn-repo" class="btn btn--ghost btn--sm btn--block"
+              title="在浏览器里打开开源项目主页">开源项目地址</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar__title">
+        <h1>账号管理</h1>
+        <p id="meta-line">每个账号有自己独立的 ZCode 数据目录，切换即启动对应的那一份，互不覆盖</p>
+      </div>
+      <div class="topbar__actions">
+        <div class="stat-pill" id="pill-sess" title="授权会话状态,点击清空会话">
+          <span class="stat-pill__dot"></span>
+          <span class="stat-pill__label">会话</span>
+          <span id="sess-info" class="sess-info">检测中…</span>
+          <div class="stat-pill__menu">
+            <button id="btn-sess-reset" class="menu__item"
+                    title="清空面板内置浏览器里的 bigmodel.cn / chat.z.ai 登录态。每次授权前会自动清一次，避免新号绑到上一个 BigModel 账号">清空会话</button>
+          </div>
+        </div>
+        <div class="stat-pill" id="pill-proxy" title="ZCode 代理状态,点击修改">
+          <span class="stat-pill__dot"></span>
+          <span class="stat-pill__label">代理</span>
+          <span id="proxy-state" class="proxy-state">读取中…</span>
+          <div class="stat-pill__menu">
+            <button id="btn-proxy-auto" class="menu__item"
+                    title="读取 Windows 系统代理并写入 ZCode 配置。ZCode 默认给主会话下发 direct，会主动绕过系统代理，所以必须写进它自己的配置才生效">用系统代理</button>
+            <button id="btn-proxy-clear" class="menu__item"
+                    title="清掉 ZCode 的 httpProxy，恢复它默认的直连行为">清除代理</button>
+          </div>
+        </div>
+        <span id="sync-state" class="sync-state">已同步</span>
+        <button id="btn-refresh" class="btn btn--ghost">刷新</button>
+        <button id="btn-settings" class="btn btn--ghost" title="设置 ZCode 客户端位置与账号数据目录">设置</button>
+      </div>
+    </header>
+
+    <section class="actions">
+      <button id="btn-zai-login" class="btn btn--primary btn--lg" title="用邮箱注册的 Z.ai 账号在浏览器里完成 OAuth 授权（与 zcode2api 同一条通道），全程不需要手机号。授权成功后自动建号入列。">Z.ai OAuth 登录（已有账号）</button>
+      <button id="btn-zai-mail" class="btn btn--free btn--lg" title="注册新的 Z.ai 账号。配好 YYDS Mail API Key 后：临时邮箱、名称、密码自动填好，激活邮件自动收取。开始前请开启代理并连接境外节点。">Z.ai 邮箱注册（需代理）</button>
+      <div class="more-wrap" id="more-wrap">
+        <button id="btn-more" class="btn btn--ghost btn--lg">更多操作 <span class="caret">▾</span></button>
+        <div class="more-menu hidden" id="more-menu">
+          <button id="btn-capture" class="menu__item" title="把当前登录态记到账号库里。如果旧的全局 ~/.zcode 里还有登录态，会一并迁移进来。">捕获当前登录</button>
+          <button id="btn-import-account" class="menu__item" title="导入账号：把一份凭据 JSON（或 .json 文件）导进本面板，导完就能切号使用。">导入账号</button>
+          <button id="btn-export-account" class="menu__item" title="查看所有账号的邮箱与密码，或导出成 CSV 表格（Excel 可直接打开）。面板自己注册的号才有密码，导入/捕获的号显示「未记录」。">导出账号</button>
+          <button id="btn-free-pool" class="menu__item" title="打开免费号池页面，可以领可用的 ZCode 账号。会在系统浏览器里打开 youyuaiwan.xyz。">免费号池</button>
+          <div class="menu__sep"></div>
+          <button id="btn-cleanup-expired" class="menu__item" title="把录入/注册超过 5 天的账号批量移入回收站（免费套餐 5 天到期）。先显示数量确认，再执行；当前账号若在其中也会被移除。">清理过期号（满5天）</button>
+          <button id="btn-calibrate" class="menu__item">校准注册时间</button>
+          <button id="btn-rollback" class="menu__item" title="按当前账号重启一次客户端。新架构下切换账号不再覆盖任何凭据，所以没有需要回滚的动作。">重启客户端</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="scroll-area">
+      <div id="acct-tabs" class="acct-tabs hidden">
+        <button class="acct-tab" data-tab="normal">有额度<i class="acct-tab__n" data-n="normal"></i></button>
+        <button class="acct-tab" data-tab="extra">额外套餐<i class="acct-tab__n" data-n="extra"></i></button>
+        <button class="acct-tab" data-tab="exhausted">额度耗尽<i class="acct-tab__n" data-n="exhausted"></i></button>
+        <button class="acct-tab" data-tab="all">全部<i class="acct-tab__n" data-n="all"></i></button>
+      </div>
+      <section id="account-grid" class="grid"></section>
+    </div>
+
+    <div id="driver-dock" class="driver-dock">
+      <div class="driver-dock__bar" id="btn-dock-toggle" title="展开/收起自动化流程日志">
+        <span class="driver-dock__caret" id="dock-caret">▸</span>
+        <span class="driver-dock__title">自动化流程</span>
+        <span id="dock-tail" class="driver-dock__tail">暂无记录</span>
+        <button id="btn-driver-log-clear" class="btn btn--ghost btn--mini" title="清空自动化流程记录，不影响账号与额度">清空日志</button>
+      </div>
+      <div class="driver-dock__body">
+        <div id="manual-strip" class="manual-strip hidden">
+          <span class="manual-strip__dot"></span>
+          <span class="manual-strip__label">需要你操作</span>
+          <span id="manual-msg" class="manual-strip__msg"></span>
+        </div>
+        <div id="driver-log" class="driver-log"></div>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <div id="import-modal" class="modal hidden">
+    <div class="modal__box modal__box--wide">
+      <h2>导入账号</h2>
+      <p class="modal__hint">把一份账号凭据 JSON 粘进来（或选择 .json 文件）。导入后会出现在账号管理里，可直接切号使用。</p>
+      <div class="field">
+        <span class="field__label">凭据 JSON</span>
+        <textarea id="import-text" class="input" rows="8" spellcheck="false"
+          placeholder='{"name":"acct01","jwt":"eyJ…","device_mid":"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"}'></textarea>
+      </div>
+      <div class="field">
+        <span class="field__label">或选择文件</span>
+        <input id="import-file" type="file" accept=".json,application/json,text/plain" />
+      </div>
+      <label class="check"><input id="import-replace" type="checkbox" /> 覆盖同名账号（默认不允许）</label>
+      <div id="import-result" class="modal__hint"></div>
+      <div class="modal__actions">
+        <button id="import-cancel" class="btn btn--ghost">取消</button>
+        <button id="import-ok" class="btn btn--primary">导入</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="capture-modal" class="modal hidden">
+    <div class="modal__box">
+      <h2>保存账号快照</h2>
+      <p class="modal__hint">把当前登录态存成一份快照，之后可随时切回。</p>
+      <div class="field">
+        <span class="field__label">账号名称</span>
+        <input id="capture-name" class="input" placeholder="账号名称，如 acct01" maxlength="30" />
+      </div>
+      <label class="check"><input id="capture-replace" type="checkbox" /> 覆盖已有快照</label>
+      <div class="modal__actions">
+        <button id="capture-cancel" class="btn btn--ghost">取消</button>
+        <button id="capture-ok" class="btn btn--primary">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="zai-login-modal" class="modal hidden">
+    <div class="modal__box modal__box--wide">
+      <h2>Z.ai OAuth 免密登录</h2>
+      <p class="modal__hint">用<b>邮箱注册的 Z.ai 账号</b>在浏览器里完成授权（与 zcode2api 同一条 OAuth 通道），<b>不需要手机号</b>。授权成功后写入<b>完整登录态</b>；账号名与已有账号相同时会<b>更新</b>那个账号（用于给显示未登录的账号重新授权）。</p>
+      <ol class="zai-steps">
+        <li>点「开始授权」，系统浏览器会打开 Z.ai 授权页</li>
+        <li>登录你的 Z.ai 账号，点「授权 / 允许」</li>
+        <li>回到这里等几秒，成功后自动导入账号</li>
+      </ol>
+      <div class="field">
+        <span class="field__label">账号名称</span>
+        <input id="zai-login-name" class="input input--mono" maxlength="32" placeholder="字母数字短横下划线，1-32 位" />
+      </div>
+      <div class="field">
+        <span class="field__label">授权链接（浏览器没弹出时从这里复制 / 打开）</span>
+        <div class="link-row">
+          <input id="zai-login-url" class="input input--mono" readonly placeholder="点「开始授权」后生成" />
+          <button id="zai-login-copy" class="btn btn--ghost btn--mini-inline">复制</button>
+          <button id="zai-login-reopen" class="btn btn--ghost btn--mini-inline">重新打开</button>
+        </div>
+      </div>
+      <div id="zai-login-status" class="modal__hint"></div>
+      <div class="modal__actions">
+        <button id="zai-login-close" class="btn btn--ghost">关闭</button>
+        <button id="zai-login-import" class="btn btn--ghost hidden">导入此号</button>
+        <button id="zai-login-start" class="btn btn--primary">开始授权</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="export-modal" class="modal hidden">
+    <div class="modal__box modal__box--wide">
+      <h2>账号邮箱与密码</h2>
+      <p class="modal__hint">列出账号库里记录的邮箱与密码（面板自己注册的号才有密码；导入/捕获的号显示「未记录」）。<b>导出完整备份</b>会带上每份凭据（JWT、OAuth 令牌、用户信息、device_mid），拿到别的电脑用「导入账号」即可复原；<b>导出表格</b>是给人看的汇总表。</p>
+      <div id="export-list" class="export-list"></div>
+      <div class="modal__actions">
+        <button id="export-close" class="btn btn--ghost">关闭</button>
+        <button id="export-ok-csv" class="btn btn--ghost" title="账号名称/邮箱/密码/用户ID/注册时间等汇总列，Excel 可直接打开">导出表格 (CSV)</button>
+        <button id="export-ok-json" class="btn btn--primary" title="完整备份：含凭据 JWT / OAuth 令牌 / 用户信息，可在别的电脑导入复原">导出完整备份 (JSON)</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="ask-modal" class="modal hidden">
+    <div class="modal__box">
+      <h2 id="ask-label">请输入</h2>
+      <p id="ask-hint" class="modal__hint hidden"></p>
+      <div class="field">
+        <input id="ask-input" class="input input--mono" autocomplete="off" />
+      </div>
+      <div class="modal__actions">
+        <button id="ask-cancel" class="btn btn--ghost">取消</button>
+        <button id="ask-submit" class="btn btn--primary">提交</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="settings-modal" class="modal hidden">
+    <div class="modal__box modal__box--wide">
+      <h2>设置</h2>
+      <p class="modal__hint">面板靠这些路径找到 ZCode 客户端、保存账号快照。换了电脑、换了用户名或改了安装位置，在这里指定一次即可。</p>
+
+      <div id="setup-warn" class="setup-warn hidden">
+        <strong>没找到 ZCode 客户端。</strong>
+        <span>切换账号、启动客户端都依赖它。请点「自动检测」，或在下面手动指定 ZCode.exe 的完整路径。</span>
+      </div>
+
+      <div class="field">
+        <div class="field__row">
+          <span class="field__label">ZCode 主程序</span>
+          <span id="exe-status" class="status-chip status-chip--idle">检测中…</span>
+        </div>
+        <div class="link-row">
+          <input id="set-exe" class="input input--mono" placeholder="C:\Users\你的用户名\AppData\Local\Programs\ZCode\ZCode.exe" />
+          <button id="set-exe-pick" class="btn btn--ghost btn--mini-inline">浏览…</button>
+        </div>
+        <span id="exe-hint" class="field__hint"></span>
+        <div class="link-row">
+          <button id="set-exe-detect" class="btn btn--ghost btn--mini-inline">自动检测</button>
+          <button id="set-exe-apply" class="btn btn--ghost btn--mini-inline">填入检测到的路径</button>
+        </div>
+      </div>
+
+      <div id="detect-log" class="detect-log hidden"></div>
+
+      <div class="field">
+        <span class="field__label">账号数据目录</span>
+        <div class="link-row">
+          <input id="set-accounts" class="input input--mono" placeholder="留空则用面板目录下的 accounts" />
+          <button id="set-acc-pick" class="btn btn--ghost btn--mini-inline">浏览…</button>
+          <button id="set-acc-default" class="btn btn--ghost btn--mini-inline">恢复默认</button>
+        </div>
+        <span id="acc-hint" class="field__hint"></span>
+      </div>
+
+      <div class="field">
+        <span class="field__label">YYDS Mail API Key（邮箱注册自动收信用，可留空）</span>
+        <div class="link-row">
+          <input id="set-yyds-key" class="input input--mono" type="password" autocomplete="off"
+                 placeholder="AC-…（vip.215.im 登录后创建；留空=不修改已保存的 Key）" />
+          <button id="set-yyds-clear" class="btn btn--ghost btn--mini-inline">清除</button>
+        </div>
+        <span class="field__hint">用于「Z.ai 邮箱注册（自动收信）」：自动建临时邮箱并收取激活邮件。没有它也能注册，只是邮箱和激活链接要手动处理。</span>
+      </div>
+
+      <div class="field">
+        <span class="field__label">配置文件</span>
+        <div class="link-row">
+          <input id="set-file" class="input input--mono" readonly />
+          <button id="set-open-folder" class="btn btn--ghost btn--mini-inline">打开目录</button>
+        </div>
+      </div>
+
+      <div class="modal__actions">
+        <button id="set-close" class="btn btn--ghost">关闭</button>
+        <button id="set-save" class="btn btn--primary">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 强制更新：发现新版本时盖住整个面板。故意不给关闭按钮、也不允许点背景关掉 -->
+  <div id="update-modal" class="modal modal--force hidden">
+    <div class="modal__box modal__box--wide">
+      <div class="update-badge">发现新版本</div>
+      <h2>需要先更新才能继续使用</h2>
+
+      <div class="update-versions">
+        <div class="update-ver">
+          <span class="update-ver__label">当前版本</span>
+          <span id="update-current" class="update-ver__value">--</span>
+        </div>
+        <div class="update-ver__arrow">→</div>
+        <div class="update-ver">
+          <span class="update-ver__label">最新版本</span>
+          <span id="update-latest" class="update-ver__value update-ver__value--new">--</span>
+        </div>
+      </div>
+
+      <div id="update-meta" class="update-meta"></div>
+
+      <div class="notice notice--warn">
+        <b>为什么必须先更新</b>
+        <span>旧版本可能与 ZCode 客户端或服务端接口不再兼容，继续用会出现说不清的报错。更新只是换一个新的 exe，账号数据在 <code>%APPDATA%\xzcode</code>；首次运行会从旧品牌目录自动复制迁移。</span>
+      </div>
+
+      <div id="update-notes-wrap" class="update-notes-wrap hidden">
+        <div class="update-notes__title">这个版本更新了什么</div>
+        <pre id="update-notes" class="update-notes"></pre>
+      </div>
+
+      <div class="modal__actions">
+        <button id="update-quit" class="btn btn--ghost">退出面板</button>
+        <button id="update-page" class="btn btn--ghost">打开发布页</button>
+        <button id="update-download" class="btn btn--primary">去下载新版本</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 必须放在所有弹窗之后：bindEvents() 用 querySelector 取元素，
+       脚本提前执行的话后出现的弹窗元素还没解析出来，绑定会被静默跳过 -->
+  <script src="app.js"></script>
+</body>
+</html>

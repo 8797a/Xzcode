@@ -1,0 +1,67 @@
+{
+  "name": "xzcode",
+  "version": "2.3.2",
+  "description": "XZCode multi-account management application",
+  "author": "YouYu",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --x64"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "allowScripts": {
+    "electron@33.4.11": true
+  },
+  "build": {
+    "appId": "xyz.youyuaiwan.xzcode",
+    "productName": "XZCode",
+    "copyright": "Copyright (c) 2026 XZCode contributors",
+    "directories": {
+      "output": "dist"
+    },
+    "asar": true,
+    "compression": "maximum",
+    "files": [
+      "main.js",
+      "preload.js",
+      "settings.js",
+      "oauth.js",
+      "zai-oauth.js",
+      "yyds-mail.js",
+      "balance.js",
+      "plan.js",
+      "remote-plan.js",
+      "login-driver.js",
+      "update.js",
+      "session-index.js",
+      "claim.js",
+      "captcha-verify.js",
+      "import-account.js",
+      "icon.ico",
+      "renderer/**/*"
+    ],
+    "win": {
+      "icon": "icon.ico",
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "dir",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "portable": {
+      "artifactName": "XZCode-${version}-portable.exe"
+    }
+  }
+}
